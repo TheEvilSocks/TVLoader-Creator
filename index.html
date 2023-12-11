@@ -60,43 +60,86 @@
 		<div class="container">
 			<h1>TVLoader Pack Creator</h1>
 
-			<form>
-				<div id="error" class="row">
-				</div>
-				<div class="row">
-
-					<div class="mb-3 col-7">
-						<label for="titleInput" class="form-label">Pack Name</label>
-						<input type="text" class="form-control" id="titleInput" required>
+			<div class="row">
+				<form>
+					<div id="error" class="row">
 					</div>
-					<div class="mb-3 col-1">
-						<label for="versionInput" class="form-label">Version</label>
-						<input type="text" class="form-control" id="versionInput" value="1.0.0" required>
+					<div class="row">
+
+						<div class="mb-3 col-7">
+							<label for="titleInput" class="form-label">Pack Name</label>
+							<input type="text" class="form-control" id="titleInput" required>
+						</div>
+						<div class="mb-3 col-1">
+							<label for="versionInput" class="form-label">Version</label>
+							<input type="text" class="form-control" id="versionInput" value="1.0.0" required>
+						</div>
+
+						<div class="mb-3 col">
+							<label for="iconInput" class="form-label">Thumbnail</label>
+							<input type="file" accept="image/png" class="form-control" id="iconInput" required
+								onchange="displaySelectedImage(this)">
+						</div>
+
+						<div class="mb-3 col">
+							<img id="selectedImage" src="#" alt="" class="rounded card-img" style="width: 128px">
+						</div>
 					</div>
 
-					<div class="mb-3 col">
-						<label for="iconInput" class="form-label">Thumbnail</label>
-						<input type="file" accept="image/png" class="form-control" id="iconInput" required
-							onchange="displaySelectedImage(this)">
+					<div class="mb-3">
+						<label for="descriptionTextarea" class="form-label">Description</label>
+						<textarea class="form-control" id="descriptionTextarea" rows="3" required></textarea>
+					</div>
+					<div class="mb-3">
+						<label for="videosInput" class="form-label">Video Files</label>
+						<input type="file" accept=".mp4" class="form-control" id="videosInput" multiple required>
 					</div>
 
-					<div class="mb-3 col">
-						<img id="selectedImage" src="#" alt="" class="rounded card-img" style="width: 128px">
-					</div>
-				</div>
+					<button type="submit" class="btn btn-primary">Generate Pack</button>
+				</form>
+			</div>
 
-				<div class="mb-3">
-					<label for="descriptionTextarea" class="form-label">Description</label>
-					<textarea class="form-control" id="descriptionTextarea" rows="3" required></textarea>
-				</div>
-				<div class="mb-3">
-					<label for="videosInput" class="form-label">Video Files</label>
-					<input type="file" accept=".mp4" class="form-control" id="videosInput" multiple required>
-				</div>
+			<!-- Explanation of the tool -->
+			<div class="row mt-3">
+				<div class="col">
+					<h2>How to use</h2>
+					<p>
+						To use this tool, you need to have a few things ready:
+					</p>
+					<ul>
+						<li>
+							Your video files, in the <code>.mp4</code> format.
+						</li>
+						<li>
+							A thumbnail for your pack, in the <code>.png</code> format.
+						</li>
+						<li>
+							A name for your pack.
+						</li>
+						<li>
+							A version number for your pack.
+						</li>
+						<li>
+							A description for your pack.
+						</li>
+					</ul>
 
-				<button type="submit" class="btn btn-primary">Generate Pack</button>
-			</form>
-		</div>
+					Once you have downloaded the pack, you can upload it to ThunderStore, or import it via your mod
+					manager.
+				</div>
+			</div>
+
+			<!-- Common issues -->
+			<div class="row mt-3">
+				<div class="col">
+					<h2>Common issues</h2>
+					<p>
+						<strong>Package of the same namespace, name and version already exists </strong>
+						<br>
+						Make sure to increase the version number if you're updating your pack!
+					</p>
+				</div>
+			</div>
 	</body>
 
 
@@ -139,29 +182,29 @@
 		function createPack(event) {
 			event.preventDefault();
 
-			const files = document.getElementById('videosInput').files;
+			const videos = document.getElementById('videosInput').files;
 			const zip = new JSZip();
 
 			// TODO: Use ThunderStore API to get dependencies
 			// Too bad it's CORS protected
-
+			const packName = document.getElementById('titleInput').value;
 			const manifest = {
-				name: document.getElementById('titleInput').value,
+				name: packName.replace(/ /g, "_").replace(/[^a-zA-Z0-9-_]/g, ""),
 				version_number: document.getElementById('versionInput').value,
-				description: document.getElementById('descriptionTextarea').value,
-				icon: "icon.png",
+				description: document.getElementById('descriptionTextarea').value.split('\n')[0].substring(0, 250).trim(),
 				website_url: "",
-				"dependencies": [
-					"Rattenbonkers-TVLoader-1.1.0"
+				dependencies: [
+					"Rattenbonkers-TVLoader-1.1.1"
 				]
 			}
 
 			zip.file('manifest.json', JSON.stringify(manifest));
-			zip.file(`readme.md`, `# ${manifest.name}\n${manifest.description}`);
+			zip.file(`readme.md`, `# ${packName}\n${manifest.description}`);
 			// Add videos to zip
-			for (const file of files) {
+			for (const file of videos) {
 				zip.file(`plugins/Television Videos/${file.name}`, file);
 			}
+			zip.file('icon.png', document.getElementById('iconInput').files[0]);
 
 			// Save zip
 			zip.generateAsync({ type: "blob" })
