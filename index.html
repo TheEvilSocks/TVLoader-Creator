@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>TVLoader Pack Creator</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+			integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" data-no-delete="yes"
+			integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+			crossorigin="anonymous"></script>
+		<style>
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+
+			body {
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+				font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+			}
+
+			*,
+			::before,
+			::after {
+				box-sizing: border-box;
+				border-width: 0;
+				border-style: solid;
+				border-color: #ffffff;
+			}
+
+
+			.floating-button {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				z-index: 1000;
+			}
+		</style>
+	</head>
+
+	<body>
+		<!--
+			Floating button that says "Find us on ThunderStore", links to https://thunderstore.io/c/lethal-company/p/Rattenbonkers/TVLoader/
+			Use https://gcdn.thunderstore.io/static/ts/thunderstore-logomark-white.svg as icon
+		-->
+		<a href="https://thunderstore.io/c/lethal-company/p/Rattenbonkers/TVLoader/" target="_blank"
+			class="btn btn-primary floating-button mb-3 d-flex align-items-center">
+			<img src="https://gcdn.thunderstore.io/static/ts/thunderstore-logomark-white.svg" alt="ThunderStore Logo"
+				height="30" class="me-2">
+			Find us on ThunderStore
+		</a>
+
+		<div class="container">
+			<h1>TVLoader Pack Creator</h1>
+
+			<form>
+				<div id="error" class="row">
+				</div>
+				<div class="row">
+
+					<div class="mb-3 col-7">
+						<label for="titleInput" class="form-label">Pack Name</label>
+						<input type="text" class="form-control" id="titleInput" required>
+					</div>
+					<div class="mb-3 col-1">
+						<label for="versionInput" class="form-label">Version</label>
+						<input type="text" class="form-control" id="versionInput" value="1.0.0" required>
+					</div>
+
+					<div class="mb-3 col">
+						<label for="iconInput" class="form-label">Thumbnail</label>
+						<input type="file" accept="image/png" class="form-control" id="iconInput" required
+							onchange="displaySelectedImage(this)">
+					</div>
+
+					<div class="mb-3 col">
+						<img id="selectedImage" src="#" alt="" class="rounded card-img" style="width: 128px">
+					</div>
+				</div>
+
+				<div class="mb-3">
+					<label for="descriptionTextarea" class="form-label">Description</label>
+					<textarea class="form-control" id="descriptionTextarea" rows="3" required></textarea>
+				</div>
+				<div class="mb-3">
+					<label for="videosInput" class="form-label">Video Files</label>
+					<input type="file" accept=".mp4" class="form-control" id="videosInput" multiple required>
+				</div>
+
+				<button type="submit" class="btn btn-primary">Generate Pack</button>
+			</form>
+		</div>
+	</body>
+
+
+	<script src="lib/filesaver.js"></script>
+	<script src="lib/jszip.js"></script>
+	<script type="text/javascript">
+		const form = document.querySelector('form');
+		form.addEventListener('submit', createPack);
+
+		function displaySelectedImage(input) {
+			var file = input.files[0];
+
+			if (file) {
+				let reader = new FileReader();
+
+				reader.onload = function (e) {
+					document.getElementById('selectedImage').src = e.target.result;
+				};
+
+				reader.readAsDataURL(file);
+			} else {
+				document.getElementById('selectedImage').src = '#';
+			}
+		}
+
+		function showError(message) {
+			// Show bootstrap alert
+
+			// https://getbootstrap.com/docs/5.0/components/alerts/
+			let alert = document.createElement('div');
+			alert.classList.add('alert', 'alert-danger', 'alert-dismissible', 'fade', 'show');
+			alert.setAttribute('role', 'alert');
+			alert.innerHTML = `
+				<strong>Error!</strong> ${message}
+				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			`;
+			document.getElementById('error').appendChild(alert);
+		}
+
+		function createPack(event) {
+			event.preventDefault();
+
+			const files = document.getElementById('videosInput').files;
+			const zip = new JSZip();
+
+			// TODO: Use ThunderStore API to get dependencies
+			// Too bad it's CORS protected
+
+			const manifest = {
+				name: document.getElementById('titleInput').value,
+				version_number: document.getElementById('versionInput').value,
+				description: document.getElementById('descriptionTextarea').value,
+				icon: "icon.png",
+				website_url: "",
+				"dependencies": [
+					"Rattenbonkers-TVLoader-1.1.0"
+				]
+			}
+
+			zip.file('manifest.json', JSON.stringify(manifest));
+			zip.file(`readme.md`, `# ${manifest.name}\n${manifest.description}`);
+			// Add videos to zip
+			for (const file of files) {
+				zip.file(`plugins/Television Videos/${file.name}`, file);
+			}
+
+			// Save zip
+			zip.generateAsync({ type: "blob" })
+				.then((content) => {
+					saveAs(content, `${manifest.name}.zip`);
+				});
+
+		}
+
+	</script>
+
+</html>
