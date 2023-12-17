@@ -140,6 +140,37 @@
 					</p>
 				</div>
 			</div>
+
+
+			<!-- Resize Modal -->
+			<div class="modal" tabindex="-1" id="resizeModal" role="dialog">
+				<div class="modal-dialog modal-lg">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title">Incorrect Size</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							Thunderstore requires your pack to have a 256x256 thumbnail. <br />
+							The image you uploaded does not meet this requirement. <br />
+							Do you want to automatically resize it? <br />
+
+							<br />
+							<br />
+
+							<div class="alert alert-warning" role="alert">
+								<strong>Note:</strong> Thunderstore will reject your pack if the image is not 256x256.
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, I'm
+								good</button>
+							<button type="button" class="btn btn-primary" onclick="resizeImage()">Yes, resize it for
+								me</button>
+						</div>
+					</div>
+				</div>
+			</div>
 	</body>
 
 
@@ -149,20 +180,58 @@
 		const form = document.querySelector('form');
 		form.addEventListener('submit', createPack);
 
-		function displaySelectedImage(input) {
-			var file = input.files[0];
+		let imageData = null;
 
-			if (file) {
-				let reader = new FileReader();
+		function resizeImage() {
+			const canvas = document.createElement('canvas');
+			const imageElem = document.getElementById('selectedImage');
+			canvas.width = 256;
+			canvas.height = 256;
+			const ctx = canvas.getContext('2d');
 
-				reader.onload = function (e) {
-					document.getElementById('selectedImage').src = e.target.result;
-				};
-
-				reader.readAsDataURL(file);
-			} else {
-				document.getElementById('selectedImage').src = '#';
+			const image = new Image();
+			image.src = imageData;
+			image.onload = function () {
+				ctx.drawImage(image, 0, 0, 256, 256);
+				imageData = imageElem.src = canvas.toDataURL();
 			}
+
+
+			const resizeModal = bootstrap.Modal.getInstance(document.getElementById('resizeModal'));
+			if (resizeModal)
+				resizeModal.hide();
+		}
+
+		function displaySelectedImage(input) {
+			const file = input.files[0];
+
+			if (!file) {
+				document.getElementById('selectedImage').src = '#';
+				imageData = null;
+				return;
+			}
+
+			const reader = new FileReader();
+
+			reader.onload = function (e) {
+				document.getElementById('selectedImage').src = imageData = e.target.result;
+
+
+				// Check if image is 256x256, if not, offer to resize it.
+				const image = new Image();
+				image.src = imageData;
+				image.onload = function () {
+					// Auto resize if square
+					if (image.width == image.height && image.width != 256) {
+						resizeImage();
+					} else if (image.width != 256 && image.height != 256) {
+						const resizeModal = new bootstrap.Modal('#resizeModal');
+						resizeModal.show();
+					}
+				}
+			};
+
+			reader.readAsDataURL(file);
 		}
 
 		function showError(message) {
@@ -201,10 +270,10 @@
 			zip.file('manifest.json', JSON.stringify(manifest));
 			zip.file(`readme.md`, `# ${packName}\n${manifest.description}`);
 			// Add videos to zip
-			for (const file of videos) {
+			for (const file of videos)
 				zip.file(`plugins/Television Videos/${file.name}`, file);
-			}
-			zip.file('icon.png', document.getElementById('iconInput').files[0]);
+
+			zip.file('icon.png', imageData.split(',')[1], { base64: true });
 
 			// Save zip
 			zip.generateAsync({ type: "blob" })
