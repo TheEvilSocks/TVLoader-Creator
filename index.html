@@ -46,10 +46,6 @@
 	</head>
 
 	<body>
-		<!--
-			Floating button that says "Find us on ThunderStore", links to https://thunderstore.io/c/lethal-company/p/Rattenbonkers/TVLoader/
-			Use https://gcdn.thunderstore.io/static/ts/thunderstore-logomark-white.svg as icon
-		-->
 		<a href="https://thunderstore.io/c/lethal-company/p/Rattenbonkers/TVLoader/" target="_blank"
 			class="btn btn-primary floating-button mb-3 d-flex align-items-center">
 			<img src="https://gcdn.thunderstore.io/static/ts/thunderstore-logomark-white.svg" alt="ThunderStore Logo"
@@ -171,6 +167,7 @@
 					</div>
 				</div>
 			</div>
+		</div>
 	</body>
 
 
@@ -268,7 +265,7 @@
 			}
 
 			zip.file('manifest.json', JSON.stringify(manifest));
-			zip.file(`readme.md`, `# ${packName}\n${manifest.description}`);
+			zip.file(`README.md`, `# ${packName}\n${manifest.description}`);
 			// Add videos to zip
 			for (const file of videos)
 				zip.file(`plugins/Television Videos/${file.name}`, file);
